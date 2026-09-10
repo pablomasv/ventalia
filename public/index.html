@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ventalia — Gestión de casos</title>
+  <link rel="icon" href="/img/ventalia-logo.png">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header__brand">
+      <img src="/img/ventalia-logo.png" alt="Ventalia" class="brand-logo">
+      <div class="header__brand-text">
+        <span class="header__tagline">Gestión de casos</span>
+      </div>
+    </div>
+    <div class="header__roles" role="tablist" aria-label="Selector de rol">
+      <button type="button" class="role-btn role-btn--active" data-rol="tecnico">Agente técnico</button>
+      <button type="button" class="role-btn" data-rol="postventa">Agente postventa</button>
+      <button type="button" class="role-btn" data-rol="responsable">Responsable</button>
+    </div>
+    <p class="header__scope" id="scope-label" aria-live="polite"></p>
+    <a class="header__portal-link" href="/nuevo-caso">Portal · nuevo caso</a>
+  </header>
+
+  <main id="app" class="app"></main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

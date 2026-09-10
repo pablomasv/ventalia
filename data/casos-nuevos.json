@@ -1,0 +1,38 @@
+[
+  {
+    "id": "CASE-2026-018390",
+    "cuenta_id": "ACC-003",
+    "contacto_id": "CON-003",
+    "producto_id": "PRD-002",
+    "pedido_id": null,
+    "canal": "formulario",
+    "estado": "Abierto",
+    "categoria": null,
+    "prioridad": null,
+    "equipo": null,
+    "creado": "2026-08-13T11:53:19.056Z",
+    "asunto": "no funciona el extractor",
+    "descripcion": "no funciona el extractor",
+    "datos_recogidos": [
+      {
+        "pregunta": "¿Se ha cumplimentado el informe de puesta en marcha del extractor?",
+        "respuesta": "",
+        "fuente_id": "manual-td800-instalacion#3-5-puesta-en-marcha",
+        "porque": "Este informe es requisito para la tramitación de cualquier reclamación de garantía."
+      },
+      {
+        "pregunta": "¿Está instalado el extractor con los cuatro soportes elásticos suministrados?",
+        "respuesta": "",
+        "fuente_id": "manual-td800-instalacion#3-2-elementos-antivibratorios",
+        "porque": "El montaje sin los soportes elásticos se considera instalación fuera de especificación."
+      },
+      {
+        "pregunta": "¿Está instalado un interruptor de corte con separación de contactos de al menos 3 mm?",
+        "respuesta": "",
+        "fuente_id": "manual-td800-instalacion#3-4-conexion-electrica",
+        "porque": "Debe instalarse un interruptor de corte con separación de contactos de al menos 3 mm, accesible sin necesidad de herramientas."
+      }
+    ],
+    "resolucion": null
+  }
+]

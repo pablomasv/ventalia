@@ -1,0 +1,200 @@
+.alta-body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(20, 90, 120, 0.08), transparent 55%),
+    linear-gradient(180deg, #f3f6f8 0%, #e8eef2 100%);
+  color: var(--text);
+}
+
+.alta-header {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.alta-header__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.alta-header__title {
+  margin: 0.15rem 0 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--brand-navy, #123049);
+}
+
+.alta-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 3rem;
+}
+
+.alta-steps {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.alta-step-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.alta-step-pill--activo {
+  background: var(--brand-navy, #123049);
+  border-color: var(--brand-navy, #123049);
+  color: #fff;
+}
+
+.alta-step-pill--hecho {
+  border-color: rgba(20, 125, 82, 0.4);
+  color: var(--success);
+}
+
+.alta-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.35rem 1.4rem;
+  box-shadow: 0 1px 2px rgba(18, 48, 73, 0.04);
+}
+
+.alta-card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  color: var(--brand-navy, #123049);
+}
+
+.alta-card__sub {
+  margin: 0 0 1.1rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.alta-field {
+  margin-bottom: 0.95rem;
+}
+
+.alta-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.alta-field select,
+.alta-field textarea,
+.alta-field input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+}
+
+.alta-field textarea {
+  min-height: 140px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.alta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.alta-pregunta {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.85rem;
+  background: #fafbfc;
+}
+
+.alta-pregunta__porque {
+  margin: 0.35rem 0 0.55rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.alta-pregunta__fuente {
+  display: inline-block;
+  font-size: 0.75rem;
+  margin-bottom: 0.55rem;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.alta-pregunta__fuente:hover {
+  text-decoration: underline;
+}
+
+.alta-resumen-dl {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+  margin: 0 0 1rem;
+}
+
+.alta-resumen-dl dt {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.alta-resumen-dl dd {
+  margin: 0;
+}
+
+.alta-ok {
+  border-left: 3px solid var(--success);
+  background: var(--success-bg);
+  padding: 1rem 1.1rem;
+  border-radius: 0 8px 8px 0;
+}
+
+.alta-ok h2 {
+  margin: 0 0 0.5rem;
+}
+
+.alta-ok p {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+}
+
+.alta-error {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--danger-bg);
+  border-left: 3px solid var(--danger);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.875rem;
+}
+
+.alta-muted {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
