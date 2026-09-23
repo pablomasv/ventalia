@@ -4,7 +4,11 @@ An AI copilot for customer service teams at an industrial equipment manufacturer
 
 > **Ventalia Ventilation Group** is a fictional HVAC manufacturer used as the demo brand. All CRM and documentation data is synthetic. The UI and demo content are in Spanish.
 
-![Ventalia case view] (docs/Screenshot 2026-09-23 at 09.55.48.png)
+![Vista agente técnico 1](docs/Vista_tecnico1.png)
+![Vista agente técnico 2](docs/vista_tecnico2.png)
+![Vista agente técnico 3](docs/vista_tecnico3.png)
+![Vista agente técnico 4](docs/vista_tecnico4.png)
+![Vista agente postventa 1](docs/vista_postventa1.png)
 
 ---
 
