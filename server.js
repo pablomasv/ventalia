@@ -19,6 +19,9 @@ const {
   getContactos,
   actualizarCaso,
   crearCaso,
+  cambiarEstado,
+  registrarActividad,
+  TRANSICIONES,
 } = require('./crm');
 const { construirDashboard } = require('./dashboard');
 const { obtenerDocumento } = require('./documentos');
@@ -48,6 +51,61 @@ app.get('/nuevo-caso', (req, res) => {
 
 function validarRol(rol) {
   return ROLES_VALIDOS.includes(rol) ? rol : 'tecnico';
+}
+
+/**
+ * Camino más corto entre dos estados, sin incluir el de origen.
+ * Devuelve null si no hay una secuencia de transiciones válidas.
+ */
+function caminoDeEstados(desde, hasta) {
+  if (desde === hasta) return [];
+
+  const cola = [[desde]];
+  const vistos = new Set([desde]);
+
+  while (cola.length) {
+    const camino = cola.shift();
+    const actual = camino[camino.length - 1];
+    for (const siguiente of TRANSICIONES[actual] || []) {
+      if (vistos.has(siguiente)) continue;
+      const extendido = camino.concat(siguiente);
+      if (siguiente === hasta) return extendido.slice(1);
+      vistos.add(siguiente);
+      cola.push(extendido);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Lleva un caso hasta `destino` dando solo pasos que la máquina de
+ * estados permite. Cada paso queda en actividad_caso. Los botones de
+ * la interfaz prometen "Esperando cliente" o "Cerrado" de un golpe, y
+ * desde "Nuevo" eso no es una transición directa: se recorre el camino
+ * más corto y el caso termina en el estado que la interfaz ya anuncia.
+ */
+async function llevarAlEstado(casoId, destino, actor, motivo) {
+  const caso = await getCaso(casoId);
+  if (!caso) return null;
+  if (caso.estado === destino) return caso;
+
+  const pasos = caminoDeEstados(caso.estado, destino);
+  if (!pasos) {
+    const error = new Error(
+      `No hay una secuencia de transiciones válidas desde "${caso.estado}" hasta "${destino}".`
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  let actual = caso;
+  for (let i = 0; i < pasos.length; i += 1) {
+    const esUltimo = i === pasos.length - 1;
+    const motivoPaso = esUltimo ? motivo : `Paso intermedio hacia «${destino}»`;
+    actual = await cambiarEstado(casoId, pasos[i], actor, motivoPaso);
+  }
+  return actual;
 }
 
 /**
@@ -105,8 +163,8 @@ app.post('/api/alta/analizar', async (req, res) => {
 });
 
 /**
- * Crea el caso en casos-nuevos.json, dispara el triaje completo
- * (analizar.js) y persiste el resultado en triaje-cache.json.
+ * Crea el caso en la base, dispara el triaje completo (analizar.js)
+ * y persiste el resultado en analisis_caso.
  */
 app.post('/api/alta/crear', async (req, res) => {
   const {
@@ -292,68 +350,75 @@ app.post('/api/casos/:caseId/triaje', (req, res) => {
 });
 
 /**
- * Marca el caso como respondido: pasa a "Esperando cliente". Sigue
- * abierto (aparece en cola), pero deja constancia de que el agente ya
- * envió una respuesta. Solo en memoria, como el resto de mutaciones.
+ * Marca el caso como respondido: termina en "Esperando cliente" por
+ * transiciones válidas, y deja actividad de ese mensaje al cliente.
+ * El caso sigue en cola.
  */
 app.post('/api/casos/:caseId/respondido', async (req, res) => {
   const { caseId } = req.params;
-  const caso = await getCaso(caseId);
-  if (!caso) {
-    return res.status(404).json({ error: `Caso no encontrado: ${caseId}` });
-  }
-  if (caso.estado === 'Cerrado') {
-    return res.status(400).json({ error: 'El caso ya está cerrado' });
-  }
 
-  const actualizado = await actualizarCaso(caseId, {
-    estado: 'Esperando cliente',
-    respondido_en: new Date().toISOString(),
-  });
+  try {
+    const caso = await getCaso(caseId);
+    if (!caso) {
+      return res.status(404).json({ error: `Caso no encontrado: ${caseId}` });
+    }
+    if (caso.estado === 'Cerrado') {
+      return res.status(400).json({ error: 'El caso ya está cerrado' });
+    }
 
-  res.json({ caso: actualizado });
+    const actualizado = await llevarAlEstado(
+      caseId,
+      'Esperando cliente',
+      'agente',
+      'Respuesta enviada al cliente'
+    );
+    await registrarActividad(caseId, 'mensaje_cliente', 'agente', 'Respuesta enviada al cliente');
+
+    res.json({ caso: actualizado });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
 });
 
 /**
- * Marca un caso como resuelto: pasa a "Cerrado" y por tanto deja de
- * aparecer en cualquier cola (`getCasosAbiertos()` lo excluye). Al
- * cerrarlo, se "confirman" en el propio caso del CRM el equipo, la
- * prioridad y la categoría que tenía en ese momento el triaje (IA o
- * corregido por agente): así un caso cerrado por esta vía queda con el
- * mismo aspecto que los casos cerrados de ejemplo del CRM, y puede
- * alimentar los patrones de la vista de Responsable
- * (`patronesCausaRaizPorProducto`, `patronCategoriaGarantia`,
- * `patronesInstalacion`) igual que ellos. `causa_raiz`/`resolucion` son
- * opcionales: si el agente no los rellena, el caso igualmente se cierra.
- * Como `crm.js` mantiene los datos en memoria (no reescribe crm.json),
- * esto se pierde al reiniciar el servidor — mismo criterio que las
- * correcciones de equipo.
+ * Cierra el caso: confirma en el CRM categoría, prioridad y equipo del
+ * triaje (IA o corregido) y lo lleva a "Cerrado" por transiciones
+ * válidas. A partir de ahí `getCasosAbiertos()` lo excluye y puede
+ * alimentar los patrones de la vista de Responsable. `causa_raiz` y
+ * `resolucion` son opcionales. Queda persistido en la base.
  */
 app.post('/api/casos/:caseId/resolver', async (req, res) => {
   const { caseId } = req.params;
   const { causa_raiz: causaRaiz, resolucion } = req.body;
 
-  const caso = await getCaso(caseId);
-  if (!caso) {
-    return res.status(404).json({ error: `Caso no encontrado: ${caseId}` });
+  try {
+    const caso = await getCaso(caseId);
+    if (!caso) {
+      return res.status(404).json({ error: `Caso no encontrado: ${caseId}` });
+    }
+    if (caso.estado === 'Cerrado') {
+      return res.status(400).json({ error: 'El caso ya está cerrado' });
+    }
+
+    const triaje = resumenTriaje(caseId);
+
+    await actualizarCaso(caseId, {
+      categoria: triaje.categoria || caso.categoria || null,
+      prioridad: triaje.prioridad || caso.prioridad || null,
+      equipo: triaje.equipo || caso.equipo || null,
+      causa_raiz: causaRaiz || null,
+      resolucion: resolucion || null,
+    });
+
+    const motivo = causaRaiz
+      ? `Cerrado por el agente. Causa raíz: ${causaRaiz}`
+      : 'Cerrado por el agente';
+    const actualizado = await llevarAlEstado(caseId, 'Cerrado', 'agente', motivo);
+
+    res.json({ caso: actualizado });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
   }
-  if (caso.estado === 'Cerrado') {
-    return res.status(400).json({ error: 'El caso ya está cerrado' });
-  }
-
-  const triaje = resumenTriaje(caseId);
-
-  const actualizado = await actualizarCaso(caseId, {
-    estado: 'Cerrado',
-    categoria: triaje.categoria || caso.categoria || null,
-    prioridad: triaje.prioridad || caso.prioridad || null,
-    equipo: triaje.equipo || caso.equipo || null,
-    causa_raiz: causaRaiz || null,
-    resolucion: resolucion || null,
-    resuelto_en: new Date().toISOString(),
-  });
-
-  res.json({ caso: actualizado });
 });
 
 app.listen(PORT, () => {

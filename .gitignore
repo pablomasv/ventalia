@@ -3,5 +3,10 @@ __pycache__/
 .venv/
 .env
 *.log
+data/ventalia.db
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
 .DS_Store
 CONTEXTO.md

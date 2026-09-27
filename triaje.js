@@ -1,24 +1,21 @@
 /**
  * Capa de acceso al triaje de la IA.
  *
- * El pre-triaje (pretriaje.js) analiza todos los casos abiertos por
- * adelantado y guarda el resultado en /data/triaje-cache.json. Este
- * módulo carga esa caché en memoria al arrancar el servidor y expone
- * funciones para leerla, para registrar análisis en vivo (cuando un
- * caso no está en caché o se fuerza un reanálisis) y para registrar
- * correcciones manuales del agente sobre el equipo asignado.
+ * El pre-triaje (pretriaje.js) analiza los casos abiertos y guarda el
+ * resultado en la tabla analisis_caso. Este módulo la carga en memoria
+ * al usarla y expone funciones para leerla, para registrar análisis en
+ * vivo y para anotar correcciones manuales del agente.
  *
- * Las correcciones y los análisis en vivo solo viven en memoria: no se
- * reescribe /data/triaje-cache.json desde el servidor, para no pisar el
- * fichero que genera el pre-triaje.
+ * Las correcciones siguen viviendo solo en memoria (se pierden al
+ * reiniciar el proceso). Un reanálisis forzado tampoco reescribe la
+ * tabla: solo lo hacen el pre-triaje y el alta de un caso, que sí
+ * persisten el resultado.
  */
 
-const fs = require('fs');
-const path = require('path');
 const { analizarCaso } = require('./analizar');
 const { obtenerFragmentoPorId } = require('./buscar');
-
-const CACHE_PATH = path.join(__dirname, 'data', 'triaje-cache.json');
+const { abrir } = require('./db');
+const { registrarActividad } = require('./crm');
 
 let cacheEnMemoria = null;
 // Correcciones del agente sobre el triaje. Solo viven en memoria.
@@ -26,19 +23,44 @@ let cacheEnMemoria = null;
 const correcciones = {}; // { [caseId]: { equipo?, categoria?, prioridad?, corregido_en } }
 
 function cargarCacheDeDisco() {
-  if (!fs.existsSync(CACHE_PATH)) return {};
+  const filas = abrir()
+    .prepare('SELECT caso_id, analizado_en, resultado FROM analisis_caso')
+    .all();
 
-  try {
-    const raw = fs.readFileSync(CACHE_PATH, 'utf8');
-    return JSON.parse(raw);
-  } catch (error) {
-    console.warn('[triaje] No se pudo leer triaje-cache.json:', error.message);
-    return {};
+  const cache = {};
+  for (const fila of filas) {
+    cache[fila.caso_id] = {
+      analizado_en: fila.analizado_en,
+      resultado: JSON.parse(fila.resultado),
+    };
   }
+  return cache;
+}
+
+/**
+ * Sustituye el contenido de analisis_caso por `cache`, indexado por id
+ * de caso. Cada valor es `{ analizado_en, resultado }`.
+ */
+function guardarAnalisisEnBase(cache) {
+  const db = abrir();
+  const borrar = db.prepare('DELETE FROM analisis_caso');
+  const insertar = db.prepare(
+    `INSERT INTO analisis_caso (caso_id, analizado_en, resultado)
+     VALUES (?, ?, ?)`
+  );
+
+  const escribir = db.transaction((entradas) => {
+    borrar.run();
+    for (const [casoId, entrada] of Object.entries(entradas)) {
+      insertar.run(casoId, entrada.analizado_en, JSON.stringify(entrada.resultado));
+    }
+  });
+
+  escribir(cache);
 }
 
 function guardarCacheEnDisco(cache) {
-  fs.writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2), 'utf8');
+  guardarAnalisisEnBase(cache);
 }
 
 function obtenerCache() {
@@ -68,7 +90,7 @@ function guardarEnMemoria(caseId, resultado) {
 }
 
 /**
- * Igual que guardarEnMemoria, pero además reescribe triaje-cache.json.
+ * Igual que guardarEnMemoria, pero además reescribe analisis_caso.
  * Lo usa el alta por formulario para que el triaje sobreviva a un
  * reinicio del servidor (mismo criterio que pretriaje.js).
  */
@@ -99,6 +121,7 @@ async function analizarYPersistir(caseId, rol = 'responsable') {
  * `corregirEquipo`, que queda como atajo.
  */
 function corregirTriaje(caseId, cambios = {}) {
+  const equipoPrevio = resumenTriaje(caseId).equipo;
   const previa = correcciones[caseId] || {};
   const siguiente = { ...previa, corregido_en: new Date().toISOString() };
 
@@ -107,6 +130,21 @@ function corregirTriaje(caseId, cambios = {}) {
   if (cambios.prioridad != null) siguiente.prioridad = cambios.prioridad;
 
   correcciones[caseId] = siguiente;
+
+  if (cambios.equipo != null && cambios.equipo !== equipoPrevio) {
+    const desde = equipoPrevio || 'sin equipo';
+    registrarActividad(
+      caseId,
+      'correccion_enrutado',
+      'agente',
+      `Enrutado corregido: ${desde} → ${cambios.equipo}`
+    ).catch((error) => {
+      console.error(
+        `[triaje] No se registró la corrección de enrutado de ${caseId}: ${error.message}`
+      );
+    });
+  }
+
   return siguiente;
 }
 
@@ -234,9 +272,9 @@ async function analizarConCache(caseId, rol, { forzar = false } = {}) {
 }
 
 module.exports = {
-  CACHE_PATH,
   cargarCacheDeDisco,
   guardarCacheEnDisco,
+  guardarAnalisisEnBase,
   obtenerCache,
   recargarCacheDeDisco,
   obtenerEntradaCache,

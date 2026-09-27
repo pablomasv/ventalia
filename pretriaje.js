@@ -6,7 +6,7 @@
  * Analiza TODOS los casos abiertos (estado distinto de "Cerrado") con la
  * misma función que usa /api/analizar (analizarCaso), uno detrás de otro
  * (no en paralelo, para no saturar la API de OpenAI ni mezclar logs), y
- * guarda el resultado en /data/triaje-cache.json indexado por id de caso.
+ * guarda el resultado en la tabla analisis_caso, indexado por id de caso.
  *
  * El resultado de cada caso es la fuente única de verdad para el equipo
  * (Técnico/Postventa), la categoría y la prioridad: la cola de cada
@@ -21,7 +21,7 @@
 
 const { analizarCaso } = require('./analizar');
 const { getCasosAbiertos } = require('./crm');
-const { guardarCacheEnDisco, CACHE_PATH } = require('./triaje');
+const { guardarAnalisisEnBase } = require('./triaje');
 
 async function ejecutarPretriaje() {
   const casos = await getCasosAbiertos();
@@ -65,7 +65,7 @@ async function ejecutarPretriaje() {
     }
   }
 
-  guardarCacheEnDisco(cache);
+  guardarAnalisisEnBase(cache);
 
   console.log('\n=== Resumen del pre-triaje ===');
   console.log(`Total de casos abiertos: ${casos.length}`);
@@ -91,7 +91,7 @@ async function ejecutarPretriaje() {
     }
   }
 
-  console.log(`\nCaché guardada en ${CACHE_PATH}`);
+  console.log('\nAnálisis guardados en la tabla analisis_caso.');
 }
 
 ejecutarPretriaje().catch((error) => {

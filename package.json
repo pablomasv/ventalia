@@ -7,9 +7,12 @@
     "start": "node server.js",
     "indexar": "node indexar.js",
     "probar-busqueda": "node probar-busqueda.js",
-    "limpiar-nuevos": "node limpiar-nuevos.js"
+    "limpiar-nuevos": "node limpiar-nuevos.js",
+    "semilla": "node semilla.js",
+    "reiniciar-db": "node reiniciar-db.js"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.0"
   }
