@@ -1,17 +1,24 @@
 require('dotenv').config();
 
 const fs = require('fs');
+const path = require('path');
 const { DB_PATH } = require('./db');
 const { sembrar } = require('./semilla');
 
 // Antes de importar crm, triaje o voz: alguno puede abrir la base al
 // cargarse. Si no existe, se siembra ahora. Si ya existe, no se toca.
-if (!fs.existsSync(DB_PATH)) {
+const baseYaExistia = fs.existsSync(DB_PATH);
+if (!baseYaExistia) {
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   sembrar();
 }
+console.log(
+  baseYaExistia
+    ? `Base de datos encontrada: ${path.relative(process.cwd(), DB_PATH)}`
+    : `Base de datos sembrada: ${path.relative(process.cwd(), DB_PATH)}`
+);
 
 const express = require('express');
-const path = require('path');
 const { listarCola, filtrarPorRol } = require('./cola');
 const {
   analizarConCache,

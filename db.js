@@ -7,24 +7,23 @@ const DB_PATH = path.join(__dirname, 'data', 'ventalia.db');
 let conexion = null;
 
 function asegurarSemilla() {
-  if (fs.existsSync(DB_PATH)) return;
+  if (fs.existsSync(DB_PATH)) return false;
   // semilla.js requiere este módulo: la carga es perezosa para no
   // crear un ciclo al importar db.js.
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const { sembrar } = require('./semilla');
   sembrar();
+  return true;
 }
 
 function abrir() {
   if (conexion) return conexion;
 
-  // Puede llamarse al importar otro módulo, antes del arranque de
-  // server.js. Si el fichero no está, se siembra aquí mismo.
-  asegurarSemilla();
-
-  if (!fs.existsSync(DB_PATH)) {
-    throw new Error(
-      `No existe la base de datos (${path.relative(process.cwd(), DB_PATH)}). Créala con: node semilla.js`
-    );
+  // Única regla: si el fichero no está, se crea el directorio y se
+  // siembra. No hay un error que pida ejecutar semilla.js a mano.
+  const sembrada = asegurarSemilla();
+  if (sembrada) {
+    console.log(`Base de datos sembrada: ${path.relative(process.cwd(), DB_PATH)}`);
   }
 
   conexion = new Database(DB_PATH);
