@@ -12,6 +12,7 @@
     "probar-busqueda": "node probar-busqueda.js",
     "limpiar-nuevos": "node limpiar-nuevos.js",
     "semilla": "node semilla.js",
+    "exportar-analisis": "node exportar-analisis.js",
     "reiniciar-db": "node reiniciar-db.js"
   },
   "dependencies": {

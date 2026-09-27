@@ -5,9 +5,10 @@
  * existe, este script se niega a pisarla; para volver a empezar está
  * reiniciar-db.js.
  *
- * Si todavía existe data/triaje-cache.json, copia cada análisis a
- * analisis_caso (solo para casos que estén en la semilla). A partir de
- * ahí la tabla es la fuente de verdad y el JSON ya no se usa.
+ * Si existe data/analisis-semilla.json, copia esos análisis a
+ * analisis_caso (solo los casos que estén en la semilla). Así un
+ * despliegue arranca con el triaje ya hecho, sin lanzar pretriaje.js.
+ * Si ese fichero no está y queda data/triaje-cache.json, se usa este.
  *
  * Uso: node semilla.js
  */
@@ -18,6 +19,7 @@ const Database = require('better-sqlite3');
 const { DB_PATH } = require('./db');
 
 const CRM_JSON = path.join(__dirname, 'data', 'crm.json');
+const ANALISIS_JSON = path.join(__dirname, 'data', 'analisis-semilla.json');
 const CACHE_JSON = path.join(__dirname, 'data', 'triaje-cache.json');
 
 const ESQUEMA = `
@@ -201,10 +203,17 @@ function insertarCrm(db, crm) {
   for (const fila of crm.interacciones) interaccion.run(fila);
 }
 
-function importarCache(db) {
-  if (!fs.existsSync(CACHE_JSON)) return 0;
+function origenDeAnalisis() {
+  if (fs.existsSync(ANALISIS_JSON)) return ANALISIS_JSON;
+  if (fs.existsSync(CACHE_JSON)) return CACHE_JSON;
+  return null;
+}
 
-  const cache = JSON.parse(fs.readFileSync(CACHE_JSON, 'utf8'));
+function importarCache(db) {
+  const origen = origenDeAnalisis();
+  if (!origen) return 0;
+
+  const cache = JSON.parse(fs.readFileSync(origen, 'utf8'));
   const existe = db.prepare('SELECT 1 FROM casos WHERE id = ?');
   const insertar = db.prepare(`
     INSERT INTO analisis_caso (caso_id, analizado_en, resultado)
@@ -256,7 +265,7 @@ function sembrar() {
     console.log(`  pedidos: ${crm.pedidos.length}`);
     console.log(`  casos: ${crm.casos.length}`);
     console.log(`  interacciones: ${crm.interacciones.length}`);
-    console.log(`  analisis_caso: ${analisis}`);
+    console.log(`  analisis_caso: ${analisis} (${path.basename(origenDeAnalisis() || 'ninguno')})`);
     console.log('crm.json no se ha modificado.');
   } catch (error) {
     db.close();

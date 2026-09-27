@@ -3,9 +3,8 @@
  * Es el estado de partida: los casos creados después, su actividad y
  * los análisis guardados desaparecen.
  *
- * Si data/triaje-cache.json sigue en disco, la semilla lo vuelve a
- * copiar. Si ya se eliminó, hay que lanzar `node pretriaje.js` para
- * regenerar analisis_caso.
+ * Si data/analisis-semilla.json existe, la semilla vuelve a copiar
+ * esos análisis. Si no, y queda data/triaje-cache.json, usa ese.
  *
  * Uso: node reiniciar-db.js
  */
