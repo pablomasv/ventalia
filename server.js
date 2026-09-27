@@ -1,5 +1,15 @@
 require('dotenv').config();
 
+const fs = require('fs');
+const { DB_PATH } = require('./db');
+const { sembrar } = require('./semilla');
+
+// Antes de importar crm, triaje o voz: alguno puede abrir la base al
+// cargarse. Si no existe, se siembra ahora. Si ya existe, no se toca.
+if (!fs.existsSync(DB_PATH)) {
+  sembrar();
+}
+
 const express = require('express');
 const path = require('path');
 const { listarCola, filtrarPorRol } = require('./cola');

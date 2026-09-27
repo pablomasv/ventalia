@@ -234,6 +234,10 @@ function sembrar() {
     throw new Error(`No se encuentra la semilla: ${CRM_JSON}`);
   }
 
+  // En un clon limpio data/ puede no existir si solo había ficheros
+  // ignorados. SQLite no crea el directorio padre.
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+
   const crm = JSON.parse(fs.readFileSync(CRM_JSON, 'utf8'));
   const db = new Database(DB_PATH);
 

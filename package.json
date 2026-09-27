@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Prototipo de gestión de casos con triaje asistido por IA",
   "main": "server.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node server.js",
     "indexar": "node indexar.js",

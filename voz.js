@@ -520,7 +520,39 @@ function conAuth(handler) {
   };
 }
 
+function origenDeElevenLabs(origin) {
+  if (!origin) return false;
+  let url;
+  try {
+    url = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'https:') return false;
+  const host = url.hostname.toLowerCase();
+  return host === 'elevenlabs.io' || host.endsWith('.elevenlabs.io');
+}
+
+// Solo /api/voz. El widget vive en una página del proyecto; las
+// herramientas las llaman los servidores de ElevenLabs. El resto de
+// la API no recibe estas cabeceras.
+function corsVoz(req, res, next) {
+  const origin = req.get('origin');
+  if (origenDeElevenLabs(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Vary', 'Origin');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  }
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(origenDeElevenLabs(origin) ? 204 : 403);
+    return;
+  }
+  next();
+}
+
 function montarVoz(app) {
+  app.use('/api/voz', corsVoz);
   app.post('/api/voz/identificar', medir('identificar', conAuth(identificar)));
   app.post('/api/voz/consultar', medir('consultar', conAuth(consultar)));
   app.post('/api/voz/crear-caso', medir('crear-caso', conAuth(crearCasoVoz), 500));
