@@ -104,6 +104,13 @@ function obtenerFragmentoPorId(fragmentoId) {
   return cargarIndice().find((f) => f.id === fragmentoId) || null;
 }
 
+function fragmentosDelDocumento(documentoId) {
+  if (!documentoId) return [];
+  return cargarIndice()
+    .filter((fragmento) => fragmento.documento_id === documentoId)
+    .map((fragmento) => mapearFragmento(fragmento, null));
+}
+
 async function buscar(pregunta, referenciaProducto, opciones = {}) {
   const { dominioRol = null } = opciones;
   const indiceCompleto = cargarIndice();
@@ -223,6 +230,7 @@ module.exports = {
   buscar,
   obtenerEmbedding,
   obtenerFragmentoPorId,
+  fragmentosDelDocumento,
   UMBRAL,
   filtrarPorDominio,
 };

@@ -26,6 +26,7 @@ const {
 const { construirDashboard } = require('./dashboard');
 const { obtenerDocumento } = require('./documentos');
 const { analizarAlta } = require('./alta-asistida');
+const { montarVoz } = require('./voz');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -420,6 +421,8 @@ app.post('/api/casos/:caseId/resolver', async (req, res) => {
     res.status(error.status || 500).json({ error: error.message });
   }
 });
+
+montarVoz(app);
 
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
