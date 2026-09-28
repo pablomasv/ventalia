@@ -247,12 +247,10 @@ async function identificar(req, res) {
     });
   }
 
-  const previos = abrir()
-    .prepare('SELECT COUNT(*) AS n FROM casos WHERE cuenta_id = ?')
-    .get(pedido.cuenta_id);
   const cuando = mesYAnio(pedido.fecha_entrega);
   const tipo = tipoProductoHablado(pedido.producto_nombre);
   const entrega = cuando ? `, entregado en ${cuando}` : '';
+  const meses = mesesDesdeEntrega(pedido.fecha_entrega, new Date().toISOString());
 
   return res.json({
     encontrado: true,
@@ -262,11 +260,11 @@ async function identificar(req, res) {
     contexto: {
       cuenta_id: pedido.cuenta_id,
       cuenta_nombre: pedido.cuenta_nombre,
+      producto_id: pedido.producto_id,
       producto_referencia: pedido.producto_referencia,
       producto_gama: pedido.producto_gama,
       pedido_id: pedido.pedido_id,
-      meses_desde_entrega: mesesDesdeEntrega(pedido.fecha_entrega, new Date().toISOString()),
-      casos_previos_count: previos.n,
+      meses_desde_entrega: Number.isFinite(meses) ? Math.round(meses) : null,
     },
   });
 }
